@@ -54,4 +54,27 @@ describe("hollow billing", () => {
     });
     expect(res.statusCode).toBe(400);
   });
+
+  it("serves every port route under /v2 too: 501 when valid, 400 when malformed", async () => {
+    const specs = routes as Record<string, { method: "GET" | "POST"; path: string; body?: unknown }>;
+    for (const [name, r] of Object.entries(specs)) {
+      const url = "/v2" + paths[name]!;
+      const ok = await app.inject({
+        method: r.method,
+        url,
+        headers: { [TENANT_HEADER]: "op1", [IDEMPOTENCY_HEADER]: `v2-${name}` },
+        payload: payloads[name] as object | undefined,
+      });
+      expect(ok.statusCode, url).toBe(501);
+      if (r.body) {
+        const bad = await app.inject({
+          method: "POST",
+          url,
+          headers: { [TENANT_HEADER]: "op1", [IDEMPOTENCY_HEADER]: `v2-bad-${name}` },
+          payload: { definitely: "not valid" },
+        });
+        expect(bad.statusCode, url).toBe(400);
+      }
+    }
+  });
 });

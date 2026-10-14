@@ -30,18 +30,23 @@ export async function createApp(deps: ServiceDeps) {
   const app = await baseApp(deps, variant);
   const body: ErrorBody = { code: "UNAVAILABLE", message: "billing is hollow", retryable: true };
   const specs: Record<string, Spec> = routes;
+  // Each route answers at its v1 path and at the same path under /v2, with the same schema. Callbacks are exempt from
+  // tenant and idempotency checks under either prefix, as the base app exempts `/callbacks/` paths.
   for (const r of Object.values(specs)) {
-    app.route({
-      method: r.method,
-      url: r.path,
-      schema: {
-        headers: r.idempotent ? IdempotencyHeaders : undefined,
-        params: paramsOf(r.path),
-        querystring: r.query,
-        body: r.body,
-      },
-      handler: async (_req, reply) => reply.code(501).send(body),
-    });
+    for (const prefix of ["", "/v2"]) {
+      app.route({
+        method: r.method,
+        url: prefix + r.path,
+        config: { infra: r.path.startsWith("/callbacks/") },
+        schema: {
+          headers: r.idempotent ? IdempotencyHeaders : undefined,
+          params: paramsOf(r.path),
+          querystring: r.query,
+          body: r.body,
+        },
+        handler: async (_req, reply) => reply.code(501).send(body),
+      });
+    }
   }
   for (const h of await registerHandlers(deps)) app.sudsnik.registerStop(h.stop);
   app.sudsnik.setReady(true);
