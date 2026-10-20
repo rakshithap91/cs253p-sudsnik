@@ -1,3 +1,3 @@
-import { HollowConsumer } from "../consumer.js";
+import { handlerFor } from "../runtime.js";
 
-export default new HollowConsumer("wash.completed");
+export default handlerFor("wash.completed");

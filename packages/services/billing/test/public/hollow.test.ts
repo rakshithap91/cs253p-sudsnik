@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { IDEMPOTENCY_HEADER, TENANT_HEADER } from "@sudsnik/contracts";
 import { routes } from "@sudsnik/contracts/services/billing";
 import { fakeDeps, type FakeDeps } from "@sudsnik/contracts/testing";
-import { createApp, handlersDir } from "../../src/index.js";
+import { handlersDir } from "../../src/index.js";
+import { createApp } from "../../src/variants/hollow/index.js";
 
 const paths: Record<string, string> = {
   quote: "/quotes/order1",
